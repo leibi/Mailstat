@@ -103,9 +103,11 @@ fi #ende if userstat leer
 if test "$monthly" = "1"; then
 if test "$monsum" != "0"; then
  echo -n -e "$m $y: $monsum \n"
- let av=0;
- let av=$monsum/$CurDays;
- echo -n -e "Average $m $y: $av \n"
+ if test "$average" = "1"; then
+   let av=0;
+   let av=$monsum/$CurDays;
+   echo -n -e "Average $m $y: $av \n"
+ fi
 fi
 fi
 let yearsum=$yearsum+$monsum;

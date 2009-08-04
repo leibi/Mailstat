@@ -10,8 +10,19 @@ sub trim($)
    return $string;
 }
 
+my $HOME="$ENV{HOME}";
 
-open (FILE, '/home/leibi/Mail/spam');
+print "Please enter the name of the Mbox you want to process (default: spam):\n";
+my $mbox;
+chomp($mbox = <STDIN>);
+
+if($mbox){
+  print " opening $HOME . '/Mail/' . $mbox";
+  open (FILE, $HOME . '/Mail/' . $mbox);
+} else {
+  print " opening $HOME . '/Mail/spam'";
+  open (FILE, $HOME . '/Mail/spam');
+}
 
 my %HashFrom;
 my %HashTo;

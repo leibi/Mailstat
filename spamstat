@@ -1,0 +1,121 @@
+#!/bin/bash
+MAILFILE="$HOME/Mail/spam"
+
+yearsums=(2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011) #array fuer die Summe der Jahresmails
+monthsums=(1 2 3 4 5 6 7 8 9 10 11 12) #array fuer die Summe der Monatsmails
+
+
+#wenn die Eingabe fehlerhaft war
+usage="usage: spamstat [-M | -d | -m| -y | -a | -v | -V | -h] "
+
+#erst mal die Parameter auswerten...
+while getopts M:ymdaVh o ; do
+    case $o in
+    M)     MAILFILE=$OPTARG;;
+    y)     allyears=1;;     
+    a)     average=1;;
+    m)     monthly=1;;
+    d)     daily=1;;
+    V)     Version=1;;
+    h)      help=1;;	
+    esac
+done
+
+if  test "$Version" = "1" ; then 
+   echo "spamstat Version 0.1"
+   echo "Created by Andreas Leibrock (Leibi)"
+   echo "leibi@leibi.net"
+   echo "This script runs under the GPL"
+   exit 2
+fi
+
+if test "$help" = "1" ; then 
+   echo $usage
+   echo "spamstat zeigt an wie viele Mails an einem, Tag angekommen sind.
+         -M     : Favourite Logfile (default: \$HOME/Mail/spam)
+         -y     : Do Statistics over all years (2000 - 2008)
+         -V     : Show Version
+	 -m     : show monthly
+         -d     : show daily
+         -a     : show average
+         -h     : this screen"
+   exit 2
+fi
+
+#Erst mal schauen, ob wir duerfen.
+if test -r $MAILFILE; then
+echo "Access Granted!" 
+else 
+ echo "No Read-Access to $MAILFILE. GO AWAY."
+ exit 1
+fi
+
+if test "$allyears" = "1"; then
+        years="2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010"
+else 
+        years=`date +%Y`
+fi
+
+echo "starting..."
+echo "using $MAILFILE..."
+echo "collecting data..."
+
+cached="0"
+
+touch /tmp/nowdate
+
+for t in $years; do 
+#if [ /tmp/refdate -ot /tmp/nowdate ]; then 
+ grep Delivery-date $MAILFILE |cut -f 3,4,5 -d' '|grep $t |cut -f 1,2 -d' ' >/tmp/sd$t
+#else
+#  echo "cached file for $t taken"
+#  cached="1"
+#fi
+done
+
+#erst mal der Grafik-teil
+for y in $years; do #schleife ueber die Jahre
+let yearsum=0;
+if [ -e /tmp/sd$y ] ; then #gibt es das statistikfile?
+
+for m in Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec; do
+let monsum=0;
+if test "$(grep $m /tmp/sd$y)" != ""; then
+ let CurDays=0;
+ for d in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do
+   n=$(grep $m /tmp/sd$y |grep -c $d)
+   if test "$n" != "0"; then #wenns überhaupt einer war
+    let monsum=$monsum+$n
+    if test "$daily" = "1"; then #ist verbose gesetzt?
+     echo -n "$d $m " #zeig mir das Datum
+     let repeats=$n/2
+     let iteration=1
+     while test $iteration -le $repeats; do
+       echo -n "="
+       let iteration+=1
+     done  
+     echo " $n"
+    fi # ende if verbose
+    let CurDays+=1;
+   fi # ende wenn ueberhaupt...
+ done #ende for day
+fi #ende if userstat leer
+if test "$monthly" = "1"; then
+if test "$monsum" != "0"; then
+ echo -n -e "$m $y: $monsum \n"
+ let av=0;
+ let av=$monsum/$CurDays;
+ echo -n -e "Average $m $y: $av \n"
+fi
+fi
+let yearsum=$yearsum+$monsum;
+done #ende for Monat
+fi
+if test "$yearsum" != "0"; then
+ echo -n -e "$y: $yearsum \n"
+fi
+done #ende jahr
+if test "$cached" = "0"; then
+ touch -d "60 min" /tmp/refdate
+fi 
+echo "done"

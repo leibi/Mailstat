@@ -31,7 +31,7 @@ my %HashEnvTo;
 while (<FILE>) {
 chomp;
 
-  if(/^To:/)
+  if(/^To:/ || /^Cc:/ || /^Bcc:/)
   {
     if(/</)
     {

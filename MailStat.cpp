@@ -8,6 +8,7 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 using namespace std;
 
 #define BUFSIZE 8192
@@ -35,6 +36,14 @@ public:
         Mail(){};
         ~Mail(){};
 
+        enum eSpecifier
+        {
+                eFrom,
+                eTo
+        };
+
+        void AddMailAdress(const string& iString, const eSpecifier iSpec);
+
 //private: 
         string  m_MessageID;
         string  m_From;
@@ -43,6 +52,50 @@ public:
         tMyDate m_Date;
 
 };
+
+
+void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
+{
+        //first look for <> around the adress
+        //cout << "Input is " << "\"" << iString << "\"" << endl;
+        string Adress = iString;
+        size_t n = iString.find("<");
+        if(string::npos != n)
+        {
+                //cout << "< found " << iString << endl;
+                size_t p = iString.find(">");
+                Adress = iString.substr(n+1,p-n-1);
+                //cout << "substr Adress: " << "\"" << Adress <<"\""<< endl;
+        }
+
+        // remove whitespaces
+
+        n = Adress.find(" ");
+        while(0 == n)
+        {
+          //cout << "Adress1: " << "\"" << Adress << "\"" << endl;
+          Adress = Adress.substr(1);   
+          n = Adress.find(" ");
+        }
+        
+        while(string::npos != n)
+        {
+          
+          //cout << "Adress2: " << Adress << endl;
+          Adress = Adress.substr(0,Adress.length()-1);
+          n = Adress.find(" ");
+        }
+        
+
+        //cout << "Adress: " << "\"" << Adress <<"\""<< endl;
+        switch(iSpec)
+        {
+           case eFrom: m_From = Adress;break;
+           case eTo: m_To = Adress;break;
+        
+        };
+
+}
 
 
 class Mailfile
@@ -126,7 +179,7 @@ int Mailfile::ParseMailFile(const string iFilename)
                     
                     if(string::npos != n)
                     {
-                      NewMail.m_From=line.substr(n);      
+                      NewMail.AddMailAdress(line.substr(n),Mail::eFrom);      
                       //cout << "Adding From " << NewMail.m_From<<endl;
                       if(m_FromStat.end() == m_FromStat.find(NewMail.m_From))
                       {
@@ -144,7 +197,8 @@ int Mailfile::ParseMailFile(const string iFilename)
                     n = line.find(" "); 
                     if(string::npos != n)
                     {
-                     NewMail.m_To=line.substr(n);      
+                      //NewMail.m_To=line.substr(n);      
+                      NewMail.AddMailAdress(line.substr(n),Mail::eTo);      
                      //cout << "Adding To " << NewMail.m_To << "(" << line << ")" <<endl;
                      if(m_ToStat.end() == m_ToStat.find(NewMail.m_To))
                      {
@@ -213,14 +267,14 @@ int main(int argc, char** argv)
    //mbox.CreateStatistics();
    tMap::const_iterator pIter =   mbox.m_FromStat.begin();
    tMap::const_iterator pEnd =   mbox.m_FromStat.end();
-
+#if 0
     while(pIter != pEnd)
     {
         cout << "From: " << pIter->first << ": " << pIter->second << endl;
         ++pIter;
 
     }
-
+#endif
    pIter =   mbox.m_ToStat.begin();
    pEnd =   mbox.m_ToStat.end();
 

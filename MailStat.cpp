@@ -259,6 +259,19 @@ size_t Mailfile::CreateStatistics()
 int main(int argc, char** argv)
 {
    string mboxpath="/home/leibi/Mail/spam";
+
+#if 0
+   cout << "argc: " << argc << endl;
+   int c=0;
+   for(c=0; c<argc;++c)
+   {
+        cout << c << ":" << argv[c] << endl;
+   }
+#endif
+
+   if(2 == argc)
+     mboxpath=argv[1];
+   
    cout << "Opening Inbox-file: " << mboxpath << endl;
 
    Mailfile mbox(mboxpath);

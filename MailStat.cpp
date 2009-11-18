@@ -28,6 +28,7 @@ struct eqstring {
    
 //typedef map<string,int,eqstring> tMap;
 typedef map<string,int> tMap;
+typedef map<int,string> tReverseMap;
 
 class Mail
 {
@@ -45,11 +46,11 @@ public:
         void AddMailAdress(const string& iString, const eSpecifier iSpec);
 
 //private: 
-        string  m_MessageID;
-        string  m_From;
-        string  m_To;
-        string  m_Subject;
-        tMyDate m_Date;
+        string          m_MessageID;
+        string          m_From;
+        vector<string>  m_To;
+        string          m_Subject;
+        tMyDate         m_Date;
 
 };
 
@@ -80,21 +81,38 @@ void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
         
         while(string::npos != n)
         {
-          
           //cout << "Adress2: " << Adress << endl;
           Adress = Adress.substr(0,Adress.length()-1);
           n = Adress.find(" ");
         }
         
-
+        //what if there are multiple addresses seperated by ","?
+        
         //cout << "Adress: " << "\"" << Adress <<"\""<< endl;
         switch(iSpec)
         {
            case eFrom: m_From = Adress;break;
-           case eTo: m_To = Adress;break;
-        
+           case eTo:{
+                        n = Adress.find(",");
+                        if(string::npos == n)
+                        {
+                                m_To.push_back(Adress);
+                        }
+                        else
+                        {
+                                while(string::npos != n && 0 != n)
+                                {
+                                        cout << "current Adress: " << Adress <<
+                                        "with n " << n << endl;
+                                        string sub = Adress.substr(n);
+                                        m_To.push_back(sub);
+                                        Adress.erase(0,n);
+                                        n = Adress.find(",");
+                                }
+                        }
+                        break;
+                    }
         };
-
 }
 
 
@@ -199,15 +217,19 @@ int Mailfile::ParseMailFile(const string iFilename)
                     {
                       //NewMail.m_To=line.substr(n);      
                       NewMail.AddMailAdress(line.substr(n),Mail::eTo);      
-                     //cout << "Adding To " << NewMail.m_To << "(" << line << ")" <<endl;
-                     if(m_ToStat.end() == m_ToStat.find(NewMail.m_To))
-                     {
-                         m_ToStat[NewMail.m_To] = 1;
-                     }
-                     else
-                     {
-                         ++m_ToStat[NewMail.m_To];
-                     }
+                      //cout << "Adding To " << NewMail.m_To << "(" << line << ")" <<endl;
+                      vector<string>::iterator pV = NewMail.m_To.begin();
+                      for(pV = NewMail.m_To.begin();pV != NewMail.m_To.end();++pV)
+                      {
+                         if(m_ToStat.end() == m_ToStat.find(*pV))
+                         {
+                           m_ToStat[*pV] = 1;
+                         }
+                         else
+                         {
+                           ++m_ToStat[*pV];
+                         }
+                      }
                     }
                  }
                  n = line.find("Subject:");
@@ -291,14 +313,35 @@ int main(int argc, char** argv)
    pIter =   mbox.m_ToStat.begin();
    pEnd =   mbox.m_ToStat.end();
 
-    while(pIter != pEnd)
-    {
-        cout << "To: " << pIter->first << ": " << pIter->second << endl;
-        ++pIter;
+   tReverseMap rMap;
+   tReverseMap::iterator pR = rMap.begin();
+   while(pIter != pEnd)
+   {
+       cout << "To: " << pIter->first << ": " << pIter->second << endl;
+       pR = rMap.find(pIter->second);
+       if(rMap.end() == pR)
+       {
+        rMap[pIter->second] = pIter->first;
+       }
+       else
+       {
+        pR->second = pR->second + "," + pIter->first;
+       }
+       ++pIter;
+   }
 
-    }
 
-    return 0;
+   cout << endl << "The statistics part " << endl << endl;
+   pR = rMap.end();
+   while(rMap.begin() != pR)
+   {
+        --pR;
+        cout <<  pR->first << "(" << (double)(((double)pR->first/(double)mbox.GetNbMails())*100) << "%)" << ": " << pR->second << endl;
+   }
+
+
+   
+   return 0;
 }
 
 

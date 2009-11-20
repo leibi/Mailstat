@@ -1,5 +1,6 @@
 #include <map>
 #include <iostream>
+#include <iomanip>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -12,6 +13,8 @@
 using namespace std;
 
 #define BUFSIZE 8192
+
+static double bDEBUG = false;
 
 struct tMyDate
 {
@@ -58,7 +61,8 @@ public:
 void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
 {
         //first look for <> around the adress
-        //cout << "Input is " << "\"" << iString << "\"" << endl;
+        if(bDEBUG)
+                cout << "Input is " << "\"" << iString << "\"" << endl;
         string Adress = iString;
         size_t n = iString.find("<");
         if(string::npos != n)
@@ -102,8 +106,8 @@ void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
                         {
                                 while(string::npos != n && 0 != n)
                                 {
-                                        cout << "current Adress: " << Adress <<
-                                        "with n " << n << endl;
+                                        //cout << "current Adress: " << Adress <<
+                                        //"with n " << n << endl;
                                         string sub = Adress.substr(n);
                                         m_To.push_back(sub);
                                         Adress.erase(0,n);
@@ -120,7 +124,8 @@ class Mailfile
 {
 public:
         Mailfile(){};
-        Mailfile(const string& iFilename){ParseMailFile(iFilename);};
+        Mailfile(const string& iFilename){int ret = ParseMailFile(iFilename);
+        if(ret) cout << "ParseMailfile returned with " << ret << endl;};
         ~Mailfile(){};
 
         size_t GetNbMails(){return m_Mails.size();}
@@ -142,11 +147,30 @@ public:
 int Mailfile::ParseMailFile(const string iFilename)
 {
         char buffer[BUFSIZE] = "";
-        
+      
+        cout.setf(ios::fixed, ios::floatfield);
+        cout.setf(ios::showpoint);
+
+
+        cout << "Opening File " << endl;
         ifstream iFile (iFilename.c_str(),ios::binary|ifstream::in);
+        cout << "File open" << endl;
         
         if(!iFile.good()) 
          return 1;
+        
+        //get line count
+       
+         
+        cout << "Calculating Line count" << endl;
+        size_t line_count = 1+std::count(std::istreambuf_iterator<char>(iFile),
+                            std::istreambuf_iterator<char>(),'\n');
+
+        cout << "Line count calculated" << endl;
+        iFile.seekg(0, ios::beg);
+
+        size_t cur_line_count =0;
+        
         // Read one line at a time
         size_t counter =0;
         string line;
@@ -163,24 +187,36 @@ int Mailfile::ParseMailFile(const string iFilename)
            * The body is omitted at the moment
            */
 
+           ++cur_line_count;
+           //cout << "The Current Line is: " << cur_line_count << "(" << line_count << ")" <<"\n" ;
+           //cout << "The Current Line is: " << cur_line_count << endl << flush;
+           double x = (double(cur_line_count*100)/double(line_count));
+           cout << setprecision(2)<< x << " %" << "\r" << flush;;
+          
            size_t n = line.find("From "); //indicates new mail
            if(string::npos == n || n != 0 )
            {
-            //cout << "strange line: " << line << endl;
+            if(bDEBUG)
+                cout << "strange line: " << line << endl;
             iFile.getline(buffer,BUFSIZE);
             line=buffer;
            }
-           //cout << "Main: Current line: " << line << endl;
+           if(bDEBUG)
+                cout << "Main: Current line: " << "\"" << line << "\"" << "(" <<
+                buffer << ")" << endl;
            if (n != string::npos && 0 == n)
            {
-               //cout << "New Mail Nr: " << counter << endl;
+               if(bDEBUG)
+                cout << "New Mail Nr: " << counter << endl;
                counter++;
                Mail NewMail;
                iFile.getline(buffer,BUFSIZE);
                line = buffer; 
                while(iFile.good() && 0 != line.find("From "))
                {
-                 //cout << "Sub: Current line: " << line << endl;
+                 ++cur_line_count;
+                 if(bDEBUG)
+                        cout << "Sub: Current line: " << line << endl;
                  //A new mail starts here
                  n = line.find("Message-ID:");
                  if(0== n && n != string::npos)
@@ -240,13 +276,20 @@ int Mailfile::ParseMailFile(const string iFilename)
                       NewMail.m_Subject=line.substr(n);      
                     //cout << "Adding Subject " << NewMail.m_Subject<<endl;
                  }
-                 //if(!iFile.good())
-                    //cout << "file no longer good before getline" << endl;
+                 if(bDEBUG)
+                 {
+                    if(!iFile.good())
+                        cout << "file no longer good before getline" << endl;
+                 }
                  iFile.getline(buffer,BUFSIZE);
-                 //if(!iFile.good())
-                    //cout << "file no longer good after getline" << endl;
+                 if(bDEBUG)
+                 {
+                    if(!iFile.good())
+                        cout << "file no longer good after getline" << endl;
+                 }
                  line = buffer;
-                 //cout << "Sub: Current Next line: " << line << endl;
+                 if(bDEBUG)
+                         cout << "Sub: Current Next line: " << line << endl;
                }
                //cout << "pushing back Mail" << endl;
                m_Mails.push_back(NewMail);
@@ -255,16 +298,10 @@ int Mailfile::ParseMailFile(const string iFilename)
            {
                 //cout << "No New Mail for Line: " << line << " as n is " << n << endl;
            }
-           /*
-           if(!iFile.good())
-             cout << "The file is no longer good " << endl;
-           if(iFile.eof())
-             cout << " we have reached eof" << endl;
+        }//end while(file.good()) 
 
-           if(iFile.fail())
-             cout << "fail is true" << endl;
-             */
-        }//end while(fgets()) 
+
+        cout <<"100.00 %" << endl; // 100% per definition
 
         return 0;
 }
@@ -293,6 +330,14 @@ int main(int argc, char** argv)
 
    if(2 == argc)
      mboxpath=argv[1];
+   if (3 == argc)
+   {
+        if(0 == strncmp(argv[2],"-d",2))
+            bDEBUG = true;
+   }
+
+   if(bDEBUG)
+        cout << "Debug mode enabled " << endl;
    
    cout << "Opening Inbox-file: " << mboxpath << endl;
 
@@ -302,6 +347,9 @@ int main(int argc, char** argv)
    //mbox.CreateStatistics();
    tMap::const_iterator pIter =   mbox.m_FromStat.begin();
    tMap::const_iterator pEnd =   mbox.m_FromStat.end();
+
+   //TODO: command line arguments
+
 #if 0
     while(pIter != pEnd)
     {
@@ -313,11 +361,12 @@ int main(int argc, char** argv)
    pIter =   mbox.m_ToStat.begin();
    pEnd =   mbox.m_ToStat.end();
 
+        //TODO: Command line arguments
    tReverseMap rMap;
    tReverseMap::iterator pR = rMap.begin();
    while(pIter != pEnd)
    {
-       cout << "To: " << pIter->first << ": " << pIter->second << endl;
+       //cout << "To: " << pIter->first << ": " << pIter->second << endl;
        pR = rMap.find(pIter->second);
        if(rMap.end() == pR)
        {
@@ -336,7 +385,9 @@ int main(int argc, char** argv)
    while(rMap.begin() != pR)
    {
         --pR;
-        cout <<  pR->first << "(" << (double)(((double)pR->first/(double)mbox.GetNbMails())*100) << "%)" << ": " << pR->second << endl;
+        cout <<  pR->first << "\t(" <<
+        (double)(((double)pR->first/(double)mbox.GetNbMails())*100) << " %)" <<
+        ": " << "\t"<< pR->second << endl;
    }
 
 

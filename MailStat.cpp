@@ -64,14 +64,26 @@ void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
         if(bDEBUG)
                 cout << "Input is " << "\"" << iString << "\"" << endl;
         string Adress = iString;
-        size_t n = iString.find("<");
+        size_t n = iString.find("<<");
         if(string::npos != n)
         {
                 //cout << "< found " << iString << endl;
-                size_t p = iString.find(">");
-                Adress = iString.substr(n+1,p-n-1);
+                size_t p = iString.find(">>");
+                Adress = iString.substr(n+2,p-n-2);
                 //cout << "substr Adress: " << "\"" << Adress <<"\""<< endl;
         }
+        else
+        {
+                n = iString.find("<");
+                if(string::npos != n)
+                {
+                        //cout << "< found " << iString << endl;
+                        size_t p = iString.find(">");
+                        Adress = iString.substr(n+1,p-n-1);
+                        //cout << "substr Adress: " << "\"" << Adress <<"\""<< endl;
+                }
+        }
+
 
         // remove whitespaces
 
@@ -100,6 +112,8 @@ void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
                         n = Adress.find(",");
                         if(string::npos == n)
                         {
+                                if(bDEBUG) 
+                                  cout << "Adding address : " << Adress<< endl;
                                 m_To.push_back(Adress);
                         }
                         else
@@ -109,6 +123,8 @@ void Mail::AddMailAdress(const string& iString, const eSpecifier iSpec)
                                         //cout << "current Adress: " << Adress <<
                                         //"with n " << n << endl;
                                         string sub = Adress.substr(n);
+                                        if(bDEBUG) 
+                                                cout << "Adding address : " <<  sub << endl;
                                         m_To.push_back(sub);
                                         Adress.erase(0,n);
                                         n = Adress.find(",");

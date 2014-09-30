@@ -17,6 +17,8 @@ using namespace std;
 // this is an test comment
 // oh, another comment - develop
 
+
+ // one more comment
 static double bDEBUG = false;
 
 struct tMyDate

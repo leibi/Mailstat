@@ -14,6 +14,8 @@ using namespace std;
 
 #define BUFSIZE 8192
 
+// this is a test comment
+
 static double bDEBUG = false;
 
 struct tMyDate

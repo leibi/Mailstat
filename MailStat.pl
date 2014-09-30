@@ -30,7 +30,7 @@ my %HashEnvTo;
 
 sub AddTO($){
   my $cur = shift;
-  #printf "Adding $cur to TO\n";
+  #printf "Adding $cur to TO\n"; tests
   ++$HashTo{$cur};
 }
 sub AddFROM{

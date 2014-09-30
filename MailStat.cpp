@@ -14,8 +14,8 @@ using namespace std;
 
 #define BUFSIZE 8192
 
-// this is a test comment
-// oh, another comment - b2
+// this is an test comment
+// oh, another comment
 
 static double bDEBUG = false;
 
